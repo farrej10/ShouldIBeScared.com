@@ -14,7 +14,7 @@ type Movie struct {
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := Movie{
-		PageTitle: "My TODO list",
+		PageTitle: "TEST TITLE",
 	}
 
 	t, _ := template.ParseFiles("templates/layout.html")
