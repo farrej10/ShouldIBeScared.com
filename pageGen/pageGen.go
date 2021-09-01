@@ -16,11 +16,17 @@ const (
 	address = "localhost:50051"
 )
 
+type ViewData struct {
+	Movie  Movie
+	Movies []Movie
+}
+
 type Movie struct {
 	Title       string
 	Description string
 	Timestamp   string
 	ImageURL    string
+	Id          string
 }
 
 type RequestWrapper struct {
@@ -50,6 +56,34 @@ func (rw *RequestWrapper) RequestHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Request) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	resp, err := rw.c.GetMovies(ctx, &pb.Params{Id: rw.id})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	movies := []Movie{}
+	for _, movie := range resp.Movies {
+		data := Movie{
+			Title:       movie.Title,
+			Description: movie.Description,
+			Timestamp:   movie.Timestamp,
+			ImageURL:    movie.Url,
+			Id:          movie.Id,
+		}
+		movies = append(movies, data)
+	}
+	x := Movie{}
+	x, movies = movies[0], movies[1:]
+	err = rw.templates.Execute(w, ViewData{Movie: x, Movies: movies})
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
 func main() {
 
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
@@ -61,9 +95,11 @@ func main() {
 
 	templates := template.Must(template.ParseFiles("templates/movie.html", "templates/base.html"))
 	rw := &RequestWrapper{templates: templates, id: "1", c: c}
+	r2 := &RequestWrapper{templates: templates, id: "1", c: c}
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 	log.Println("Starting router")
 	myRouter.HandleFunc("/", rw.RequestHandler)
+	myRouter.HandleFunc("/movies", r2.MoviePageHandler)
 	http.ListenAndServe(":8085", myRouter)
 }

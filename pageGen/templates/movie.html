@@ -1,37 +1,35 @@
 <html lang="en">
 
-{{template "header" .Title}}
+{{template "header" .Movie.Title}}
 
 <body class="bg-secondary">
 
-
+    
     <div class="container">
         <div class="shadow card bg-dark py-3 my-4">
-            <img src="{{.ImageURL}}" class="card-img-top px-3 rounded-3" alt="Poster for the film {{.Title}}">
+            <img src="{{.Movie.ImageURL}}" class="card-img-top px-3 rounded-3" alt="Poster for the film {{.Movie.Title}}">
             <div class="card-body">
-                <h1 class="card-title text-white">{{.Title}}</h5>
-                <p class="card-text text-white">{{.Description}}</p>
-                <p class="card-text"><small class="text-muted">{{.Timestamp}}</small></p>
+                <h1 class="card-title text-white">{{.Movie.Title}}</h5>
+                <p class="card-text text-white">{{.Movie.Description}}</p>
+                <p class="card-text"><small class="text-muted">{{.Movie.Timestamp}}</small></p>
             </div>
         </div>
     </div>
-
+    
     <div class="container">
         <h1>Popular</h1>
     </div>
     <div class="container px-4 pb-3 mb-3 pt-3 mt-3">
         <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4">
-
+    
             {{range .Movies}}
-            <a href="{{.MovieURL}}" class="text-decoration-none text-reset">
+            <a href="{{.Id}}" class="text-decoration-none text-reset">
                 <div class="col">
                     <div class="shadow card bg-dark">
-                        <img src="{{.Image}}" class="card-img-top"
-                            alt="...">
+                        <img src="{{.ImageURL}}" class="card-img-top"
+                            alt="Poster for the film {{.Title}}">
                         <div class="card-body">
-                            <h5 class="card-title text-white">{{.subTitle}}</h5>
-                            <p class="card-text text-white">{{.subDescription}}</p>
-                            <p class="card-text"><small class="text-muted">{{.subTimestamp}}</small></p>
+                            <h5 class="card-title text-white">{{.Title}}</h5>
                         </div>
                     </div>
                 </div>
