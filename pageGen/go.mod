@@ -1,5 +1,0 @@
-module github.com/farrej10/ShouldIBeScared.com
-
-go 1.16
-
-require github.com/gorilla/mux v1.8.0

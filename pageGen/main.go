@@ -1,11 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"html/template"
+	"log"
 	"net/http"
+	"time"
 
+	pb "github.com/farrej10/ShouldIBeScared.com/movie"
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
+)
+
+const (
+	address = "localhost:50051"
 )
 
 type Movie struct {
@@ -15,43 +23,47 @@ type Movie struct {
 	ImageURL    string
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+type RequestWrapper struct {
+	templates *template.Template
+	id        string
+	c         pb.MoviemangerClient
+}
 
+func (rw *RequestWrapper) RequestHandler(w http.ResponseWriter, r *http.Request) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: rw.id})
+	if err != nil {
+		log.Fatalln(err)
+	}
 	data := Movie{
-		Title:       "TEST TITLES",
-		Description: "testing this thing saying something else",
-		Timestamp:   "updated now!",
-		ImageURL:    "https://image.tmdb.org/t/p/w1280/nvjcKJCDPU9bDEEyTyneTj4PnuO.jpg",
+		Title:       resp.Title,
+		Description: resp.Description,
+		Timestamp:   resp.Timestamp,
+		ImageURL:    resp.Url,
 	}
-
-	t, err := template.ParseFiles("templates/movie.html", "templates/base.html")
+	err = rw.templates.Execute(w, data)
 	if err != nil {
-		fmt.Println(err)
-	}
-	err = t.Execute(w, data)
-	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 }
 
-// func movieHandler(w http.ResponseWriter, r *http.Request) {
-
-// 	vars := mux.Vars(r)
-// 	key := vars["id"]
-
-// 	data := Movie{
-// 		PageTitle: "TEST TITLE",
-// 		MovieId:   key,
-// 	}
-
-// 	t, _ := template.ParseFiles("templates/layout.html")
-// 	t.Execute(w, data)
-// }
-
 func main() {
 
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewMoviemangerClient(conn)
+
+	templates := template.Must(template.ParseFiles("templates/movie.html", "templates/base.html"))
+	rw := &RequestWrapper{templates: templates, id: "1", c: c}
+
 	myRouter := mux.NewRouter().StrictSlash(true)
-	fmt.Println("Starting router")
-	myRouter.HandleFunc("/", indexHandler)
+	log.Println("Starting router")
+	myRouter.HandleFunc("/", rw.RequestHandler)
 	http.ListenAndServe(":8085", myRouter)
 }
