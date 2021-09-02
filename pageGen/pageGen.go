@@ -31,16 +31,15 @@ type Movie struct {
 
 type RequestWrapper struct {
 	templates *template.Template
-	id        string
 	c         pb.MoviemangerClient
 }
 
-func (rw *RequestWrapper) RequestHandler(w http.ResponseWriter, r *http.Request) {
+func (rw *RequestWrapper) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: rw.id})
+	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -61,7 +60,7 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	resp, err := rw.c.GetMovies(ctx, &pb.Params{Id: rw.id})
+	resp, err := rw.c.GetMovies(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -94,12 +93,12 @@ func main() {
 	c := pb.NewMoviemangerClient(conn)
 
 	templates := template.Must(template.ParseFiles("templates/movie.html", "templates/base.html"))
-	rw := &RequestWrapper{templates: templates, id: "1", c: c}
-	r2 := &RequestWrapper{templates: templates, id: "1", c: c}
+	rw := &RequestWrapper{templates: templates, c: c}
+	r2 := &RequestWrapper{templates: templates, c: c}
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 	log.Println("Starting router")
-	myRouter.HandleFunc("/", rw.RequestHandler)
-	myRouter.HandleFunc("/movies", r2.MoviePageHandler)
+	myRouter.HandleFunc("/", rw.IndexHandler)
+	myRouter.HandleFunc("/movies/{id}", r2.MoviePageHandler)
 	http.ListenAndServe(":8085", myRouter)
 }
