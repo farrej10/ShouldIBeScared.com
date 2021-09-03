@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	pb "github.com/farrej10/ShouldIBeScared.com/movie"
 	"github.com/joho/godotenv"
@@ -131,7 +132,7 @@ func (s *MoviemangerServer) GetMovies(ctx context.Context, in *pb.Params) (*pb.M
 	data := pb.Movie{
 		Title:       reading["original_title"].(string),
 		Description: reading["overview"].(string),
-		Timestamp:   "updated now!",
+		Timestamp:   reading["release_date"].(string),
 		Url:         "https://image.tmdb.org/t/p/w1280" + reading["backdrop_path"].(string),
 		Id:          strconv.Itoa(int(reading["id"].(float64))),
 	}
@@ -160,16 +161,63 @@ func (s *MoviemangerServer) GetMovies(ctx context.Context, in *pb.Params) (*pb.M
 
 	movies := []*pb.Movie{&data}
 
-	// for _, element := range recommendations["results"].([]interface{}) {
-	// 	movie := pb.Movie{
-	// 		Title:       element.(map[string]interface{})["title"].(string),
-	// 		Description: element.(map[string]interface{})["overview"].(string),
-	// 		Timestamp:   "updated now!",
-	// 		Url:         "https://image.tmdb.org/t/p/w342" + element.(map[string]interface{})["poster_path"].(string),
-	// 		Id:          strconv.Itoa(int(element.(map[string]interface{})["id"].(float64))),
-	// 	}
-	// 	movies = append(movies, &movie)
-	// }
+	for _, element := range recommendations.Results {
+
+		var tmpurl string
+
+		if element.PosterPath == "" && element.BackdropPath == "" {
+			log.Println("No Poster or Backdrop")
+			tmpurl = ""
+		} else if element.PosterPath == "" {
+			log.Println("No Poster")
+			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
+		} else {
+			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
+		}
+
+		movie := pb.Movie{
+			Title:       element.Title,
+			Description: element.Overview,
+			Timestamp:   element.ReleaseDate,
+			Url:         tmpurl,
+			Id:          strconv.Itoa(int(element.ID)),
+		}
+		if movie.Url != "" {
+			movies = append(movies, &movie)
+		}
+
+	}
+	log.Println("Sending Data Now")
+
+	return &pb.Movies{Movies: movies}, nil
+}
+
+func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
+
+	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+	client := &http.Client{Timeout: time.Second * 10}
+	url := "https://api.themoviedb.org/3/movie/" + in.Id + "/recommendations"
+
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", bearer)
+	// Send req using http Client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error while reading the response bytes:", err)
+	}
+	var recommendations *Recommendations
+	err = json.Unmarshal([]byte(body), &recommendations)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	movies := []*pb.Movie{}
 
 	for _, element := range recommendations.Results {
 
