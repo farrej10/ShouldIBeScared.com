@@ -6,34 +6,34 @@
 
 
     <div class="container">
-        <div class="shadow card bg-dark py-3 my-4">
-            <img src="{{.Movie.ImageURL}}" class="card-img-top px-3 rounded-3"
-                alt="Poster for the film {{.Movie.Title}}">
+        <div class="shadow card bg-dark py-3 my-4" style="border-radius: 3%;">
+            <img src="{{.Movie.ImageURL}}" class="card-img-top px-3"
+                style="border-radius: 3%;" alt="Poster for the film {{.Movie.Title}}">
             <div class="card-body">
                 <h1 class="card-title text-white">{{.Movie.Title}}</h5>
                     <p class="card-text text-white">{{.Movie.Description}}</p>
-                    <p class="card-text"><small class="text-muted">{{.Movie.Timestamp}}</small></p>
+                    <p class="card-text"><small class="text-muted">Released: {{.Movie.Timestamp}}</small></p>
             </div>
         </div>
     </div>
 
     <div class="container">
-        <h1>Popular</h1>
+        <h1>Similar Movies</h1>
     </div>
     <div class="container px-4 pb-3 mb-3 pt-3 mt-3">
-        <div class="row row-cols-2 row-cols-lg-5 align-items-center g-5">
+        <div class="row row-cols-2 row-cols g-5 justify-content-md-center">
 
             {{range .Movies}}
 
             <div class="col" style="max-width: 15rem;">
-                <a href="{{.Id}}" class="text-decoration-none text-reset"></a>
-                <div class="shadow card bg-dark">
-                    <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"
-                            style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Title}}</h5>
+                <a href="{{.Id}}" class="text-decoration-none text-reset">
+                    <div class="shadow card bg-dark">
+                        <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}">
+                        <div class="card-body">
+                            <h5 class="card-title text-white"
+                                style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Title}}</h5>
+                        </div>
                     </div>
-                </div>
                 </a>
             </div>
 

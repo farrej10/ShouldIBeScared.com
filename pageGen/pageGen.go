@@ -78,6 +78,7 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 	x := Movie{}
 	x, movies = movies[0], movies[1:]
 	err = rw.templates.Execute(w, ViewData{Movie: x, Movies: movies})
+	log.Printf("Sending pag: %v\n", x.Id)
 	if err != nil {
 		log.Fatalln(err)
 	}
