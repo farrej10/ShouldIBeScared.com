@@ -107,13 +107,13 @@ func goDotEnvVariable(key string) string {
 }
 
 func (s *MoviemangerServer) GetMovie(ctx context.Context, in *pb.Params) (*pb.Movie, error) {
-	url := "https://api.themoviedb.org/3/movie/268"
+	url := "https://api.themoviedb.org/3/movie/" + in.Id
 	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", bearer)
 	// Send req using http Client
-	client := &http.Client{}
+	client := &http.Client{Timeout: time.Second * 10}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error on response.\n[ERROR] -", err)
