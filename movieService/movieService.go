@@ -125,23 +125,23 @@ func (s *MoviemangerServer) GetMovie(ctx context.Context, in *pb.Params) (*pb.Mo
 		log.Println("Error while reading the response bytes:", err)
 	}
 
-	var reading map[string]interface{}
-	err = json.Unmarshal([]byte(body), &reading)
+	var movie *Movie
+	err = json.Unmarshal([]byte(body), &movie)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	movie := &pb.Movie{
-		Title:       reading["original_title"].(string),
-		Description: reading["overview"].(string),
-		Timestamp:   "updated now!",
-		Url:         "https://image.tmdb.org/t/p/w1280" + reading["backdrop_path"].(string),
-		Id:          strconv.Itoa(int(reading["id"].(float64))),
+	returnedmovie := &pb.Movie{
+		Title:       movie.OriginalTitle,
+		Description: movie.Overview,
+		Timestamp:   movie.ReleaseDate,
+		Url:         "https://image.tmdb.org/t/p/w1280" + movie.BackdropPath,
+		Id:          strconv.Itoa(movie.ID),
 	}
 
-	log.Println("Sending Data Now")
+	log.Printf("Sending Movie: %v\n", in.Id)
 
-	return movie, nil
+	return returnedmovie, nil
 }
 
 func (s *MoviemangerServer) GetMovies(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
@@ -278,14 +278,14 @@ func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Param
 			Description: element.Overview,
 			Timestamp:   element.ReleaseDate,
 			Url:         tmpurl,
-			Id:          strconv.Itoa(int(element.ID)),
+			Id:          strconv.Itoa(element.ID),
 		}
 		if movie.Url != "" {
 			movies = append(movies, &movie)
 		}
 
 	}
-	log.Println("Sending Data Now")
+	log.Printf("Sending Recommendations for: %v\n", in.Id)
 
 	return &pb.Movies{Movies: movies}, nil
 }

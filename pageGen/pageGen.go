@@ -60,12 +60,26 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	resp, err := rw.c.GetMovies(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
+	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	movies := []Movie{}
-	for _, movie := range resp.Movies {
+
+	movie := Movie{
+		Title:       resp.Title,
+		Description: resp.Description,
+		Timestamp:   resp.Timestamp,
+		ImageURL:    resp.Url,
+		Id:          resp.Id,
+	}
+
+	resprec, err := rw.c.GetRecommendations(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	recommendations := []Movie{}
+	for _, movie := range resprec.Movies {
 		data := Movie{
 			Title:       movie.Title,
 			Description: movie.Description,
@@ -73,12 +87,11 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 			ImageURL:    movie.Url,
 			Id:          movie.Id,
 		}
-		movies = append(movies, data)
+		recommendations = append(recommendations, data)
 	}
-	x := Movie{}
-	x, movies = movies[0], movies[1:]
-	err = rw.templates.Execute(w, ViewData{Movie: x, Movies: movies})
-	log.Printf("Sending pag: %v\n", x.Id)
+
+	err = rw.templates.Execute(w, ViewData{Movie: movie, Movies: recommendations})
+	log.Printf("Sending page: %v\n", movie.Id)
 	if err != nil {
 		log.Fatalln(err)
 	}
