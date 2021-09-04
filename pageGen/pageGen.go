@@ -34,6 +34,48 @@ type RequestWrapper struct {
 	c         pb.MoviemangerClient
 }
 
+func GetMovie(rw *RequestWrapper, id string, rc chan Movie) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: id})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	movie := Movie{
+		Title:       resp.Title,
+		Description: resp.Description,
+		Timestamp:   resp.Timestamp,
+		ImageURL:    resp.Url,
+		Id:          resp.Id,
+	}
+
+	rc <- movie
+}
+
+func GetRecommendations(rw *RequestWrapper, id string, rc chan []Movie) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	resprec, err := rw.c.GetRecommendations(ctx, &pb.Params{Id: id})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	recommendations := []Movie{}
+	for _, movie := range resprec.Movies {
+		data := Movie{
+			Title:       movie.Title,
+			Description: movie.Description,
+			Timestamp:   movie.Timestamp,
+			ImageURL:    movie.Url,
+			Id:          movie.Id,
+		}
+		recommendations = append(recommendations, data)
+	}
+	rc <- recommendations
+}
 func (rw *RequestWrapper) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -57,40 +99,22 @@ func (rw *RequestWrapper) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Request) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	start := time.Now()
 
-	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
-	if err != nil {
-		log.Fatalln(err)
-	}
+	movieChan := make(chan Movie)
+	recommendChan := make(chan []Movie)
+	defer close(movieChan)
+	defer close(recommendChan)
 
-	movie := Movie{
-		Title:       resp.Title,
-		Description: resp.Description,
-		Timestamp:   resp.Timestamp,
-		ImageURL:    resp.Url,
-		Id:          resp.Id,
-	}
+	go GetMovie(rw, mux.Vars(r)["id"], movieChan)
+	go GetRecommendations(rw, mux.Vars(r)["id"], recommendChan)
 
-	resprec, err := rw.c.GetRecommendations(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
-	if err != nil {
-		log.Fatalln(err)
-	}
+	movie := <-movieChan
+	recommendations := <-recommendChan
 
-	recommendations := []Movie{}
-	for _, movie := range resprec.Movies {
-		data := Movie{
-			Title:       movie.Title,
-			Description: movie.Description,
-			Timestamp:   movie.Timestamp,
-			ImageURL:    movie.Url,
-			Id:          movie.Id,
-		}
-		recommendations = append(recommendations, data)
-	}
-
-	err = rw.templates.Execute(w, ViewData{Movie: movie, Movies: recommendations})
+	err := rw.templates.Execute(w, ViewData{Movie: movie, Movies: recommendations})
+	end := time.Now()
+	log.Printf("Order processed after %v seconds\n", end.Sub(start).Seconds())
 	log.Printf("Sending page: %v\n", movie.Id)
 	if err != nil {
 		log.Fatalln(err)
