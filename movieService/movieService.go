@@ -259,7 +259,7 @@ func (s *MoviemangerServer) GetTrending(ctx context.Context, in *pb.Params) (*pb
 
 	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
 	client := &http.Client{Timeout: time.Second * 10}
-	url := "https://api.themoviedb.org/3/trending/move/week"
+	url := "https://api.themoviedb.org/3/trending/movie/week"
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", bearer)
 	// Send req using http Client
