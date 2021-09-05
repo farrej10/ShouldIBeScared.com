@@ -21,6 +21,11 @@ type ViewData struct {
 	Movies []Movie
 }
 
+type ViewIndex struct {
+	Popular  []Movie
+	Trending []Movie
+}
+
 type Movie struct {
 	Title       string
 	Description string
@@ -76,22 +81,67 @@ func GetRecommendations(c pb.MoviemangerClient, id string, rc chan []Movie) {
 	}
 	rc <- recommendations
 }
-func (rw *RequestWrapper) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
+func GetPopular(c pb.MoviemangerClient, id string, rc chan []Movie) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: mux.Vars(r)["id"]})
+	resprec, err := c.GetPopular(ctx, &pb.Params{Id: id})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	data := Movie{
-		Title:       resp.Title,
-		Description: resp.Description,
-		Timestamp:   resp.Timestamp,
-		ImageURL:    resp.Url,
+
+	popular := []Movie{}
+	for _, movie := range resprec.Movies {
+		data := Movie{
+			Title:       movie.Title,
+			Description: movie.Description,
+			Timestamp:   movie.Timestamp,
+			ImageURL:    movie.Url,
+			Id:          movie.Id,
+		}
+		popular = append(popular, data)
 	}
-	err = rw.templates.Execute(w, data)
+	rc <- popular
+}
+
+func GetTrending(c pb.MoviemangerClient, id string, rc chan []Movie) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	resprec, err := c.GetTrending(ctx, &pb.Params{Id: id})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	trending := []Movie{}
+	for _, movie := range resprec.Movies {
+		data := Movie{
+			Title:       movie.Title,
+			Description: movie.Description,
+			Timestamp:   movie.Timestamp,
+			ImageURL:    movie.Url,
+			Id:          movie.Id,
+		}
+		trending = append(trending, data)
+	}
+	rc <- trending
+}
+
+func (rw *RequestWrapper) IndexHandler(w http.ResponseWriter, r *http.Request) {
+
+	popularChan := make(chan []Movie)
+	trendingChan := make(chan []Movie)
+	defer close(popularChan)
+	defer close(trendingChan)
+
+	go GetPopular(rw.c, mux.Vars(r)["id"], popularChan)
+	go GetTrending(rw.c, mux.Vars(r)["id"], trendingChan)
+
+	popular := <-popularChan
+	trending := <-trendingChan
+
+	err := rw.templates.Execute(w, ViewIndex{Popular: popular, Trending: trending})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -127,12 +177,14 @@ func main() {
 	c := pb.NewMoviemangerClient(conn)
 
 	templates := template.Must(template.ParseFiles("templates/movie.html", "templates/base.html"))
+	templatesIndex := template.Must(template.ParseFiles("templates/index.html", "templates/base.html"))
+
 	rw := &RequestWrapper{templates: templates, c: c}
-	r2 := &RequestWrapper{templates: templates, c: c}
+	rwindex := &RequestWrapper{templates: templatesIndex, c: c}
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 	log.Println("Starting router")
-	myRouter.HandleFunc("/", rw.IndexHandler)
-	myRouter.HandleFunc("/movies/{id}", r2.MoviePageHandler)
+	myRouter.HandleFunc("/", rwindex.IndexHandler)
+	myRouter.HandleFunc("/movies/{id}", rw.MoviePageHandler)
 	http.ListenAndServe(":8085", myRouter)
 }

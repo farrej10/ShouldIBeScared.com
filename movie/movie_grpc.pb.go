@@ -21,6 +21,8 @@ type MoviemangerClient interface {
 	GetMovie(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movie, error)
 	GetMovies(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
 	GetRecommendations(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
+	GetPopular(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
+	GetTrending(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
 }
 
 type moviemangerClient struct {
@@ -58,6 +60,24 @@ func (c *moviemangerClient) GetRecommendations(ctx context.Context, in *Params, 
 	return out, nil
 }
 
+func (c *moviemangerClient) GetPopular(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error) {
+	out := new(Movies)
+	err := c.cc.Invoke(ctx, "/movie.Moviemanger/GetPopular", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moviemangerClient) GetTrending(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error) {
+	out := new(Movies)
+	err := c.cc.Invoke(ctx, "/movie.Moviemanger/GetTrending", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MoviemangerServer is the server API for Moviemanger service.
 // All implementations must embed UnimplementedMoviemangerServer
 // for forward compatibility
@@ -65,6 +85,8 @@ type MoviemangerServer interface {
 	GetMovie(context.Context, *Params) (*Movie, error)
 	GetMovies(context.Context, *Params) (*Movies, error)
 	GetRecommendations(context.Context, *Params) (*Movies, error)
+	GetPopular(context.Context, *Params) (*Movies, error)
+	GetTrending(context.Context, *Params) (*Movies, error)
 	mustEmbedUnimplementedMoviemangerServer()
 }
 
@@ -80,6 +102,12 @@ func (UnimplementedMoviemangerServer) GetMovies(context.Context, *Params) (*Movi
 }
 func (UnimplementedMoviemangerServer) GetRecommendations(context.Context, *Params) (*Movies, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecommendations not implemented")
+}
+func (UnimplementedMoviemangerServer) GetPopular(context.Context, *Params) (*Movies, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPopular not implemented")
+}
+func (UnimplementedMoviemangerServer) GetTrending(context.Context, *Params) (*Movies, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTrending not implemented")
 }
 func (UnimplementedMoviemangerServer) mustEmbedUnimplementedMoviemangerServer() {}
 
@@ -148,6 +176,42 @@ func _Moviemanger_GetRecommendations_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Moviemanger_GetPopular_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Params)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MoviemangerServer).GetPopular(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/movie.Moviemanger/GetPopular",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MoviemangerServer).GetPopular(ctx, req.(*Params))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Moviemanger_GetTrending_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Params)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MoviemangerServer).GetTrending(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/movie.Moviemanger/GetTrending",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MoviemangerServer).GetTrending(ctx, req.(*Params))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Moviemanger_ServiceDesc is the grpc.ServiceDesc for Moviemanger service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -166,6 +230,14 @@ var Moviemanger_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRecommendations",
 			Handler:    _Moviemanger_GetRecommendations_Handler,
+		},
+		{
+			MethodName: "GetPopular",
+			Handler:    _Moviemanger_GetPopular_Handler,
+		},
+		{
+			MethodName: "GetTrending",
+			Handler:    _Moviemanger_GetTrending_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

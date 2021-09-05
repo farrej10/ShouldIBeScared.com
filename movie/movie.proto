@@ -8,6 +8,8 @@ service Moviemanger {
     rpc GetMovie (Params) returns (Movie) {}
     rpc GetMovies (Params) returns (Movies) {}
     rpc GetRecommendations (Params) returns (Movies) {}
+    rpc GetPopular (Params) returns (Movies) {}
+    rpc GetTrending (Params) returns (Movies) {}
 }
 
 message Params {

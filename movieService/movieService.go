@@ -199,6 +199,118 @@ func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Param
 	return &pb.Movies{Movies: movies}, nil
 }
 
+func (s *MoviemangerServer) GetPopular(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
+
+	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+	client := &http.Client{Timeout: time.Second * 10}
+	url := "https://api.themoviedb.org/3/movie/popular"
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", bearer)
+	// Send req using http Client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error while reading the response bytes:", err)
+	}
+	var popular *Recommendations
+	err = json.Unmarshal([]byte(body), &popular)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	movies := []*pb.Movie{}
+
+	for _, element := range popular.Results {
+
+		var tmpurl string
+
+		if element.PosterPath == "" && element.BackdropPath == "" {
+			log.Println("No Poster or Backdrop")
+			tmpurl = ""
+		} else if element.PosterPath == "" {
+			log.Println("No Poster")
+			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
+		} else {
+			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
+		}
+
+		movie := pb.Movie{
+			Title:       element.Title,
+			Description: element.Overview,
+			Timestamp:   element.ReleaseDate,
+			Url:         tmpurl,
+			Id:          strconv.Itoa(element.ID),
+		}
+		if movie.Url != "" {
+			movies = append(movies, &movie)
+		}
+
+	}
+
+	return &pb.Movies{Movies: movies}, nil
+}
+
+func (s *MoviemangerServer) GetTrending(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
+
+	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+	client := &http.Client{Timeout: time.Second * 10}
+	url := "https://api.themoviedb.org/3/trending/move/week"
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", bearer)
+	// Send req using http Client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error while reading the response bytes:", err)
+	}
+	var trending *Recommendations
+	err = json.Unmarshal([]byte(body), &trending)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	movies := []*pb.Movie{}
+
+	for _, element := range trending.Results {
+
+		var tmpurl string
+
+		if element.PosterPath == "" && element.BackdropPath == "" {
+			log.Println("No Poster or Backdrop")
+			tmpurl = ""
+		} else if element.PosterPath == "" {
+			log.Println("No Poster")
+			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
+		} else {
+			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
+		}
+
+		movie := pb.Movie{
+			Title:       element.Title,
+			Description: element.Overview,
+			Timestamp:   element.ReleaseDate,
+			Url:         tmpurl,
+			Id:          strconv.Itoa(element.ID),
+		}
+		if movie.Url != "" {
+			movies = append(movies, &movie)
+		}
+
+	}
+
+	return &pb.Movies{Movies: movies}, nil
+}
+
 func main() {
 
 	lis, _ := net.Listen("tcp", port)
