@@ -1,0 +1,28 @@
+version: "3.7"
+
+services:
+
+  movie-service:
+    build: ./movieService
+    container_name: movie-service
+    restart: unless-stopped
+    ports:
+      - "50051:50051"
+  
+  page-gen:
+    build: ./pageGen
+    container_name: page-gen
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    depends_on: 
+      - movie-service
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - page-gen
