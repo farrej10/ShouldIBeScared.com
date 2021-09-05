@@ -34,11 +34,11 @@ type RequestWrapper struct {
 	c         pb.MoviemangerClient
 }
 
-func GetMovie(rw *RequestWrapper, id string, rc chan Movie) {
+func GetMovie(c pb.MoviemangerClient, id string, rc chan Movie) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	resp, err := rw.c.GetMovie(ctx, &pb.Params{Id: id})
+	resp, err := c.GetMovie(ctx, &pb.Params{Id: id})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -54,11 +54,11 @@ func GetMovie(rw *RequestWrapper, id string, rc chan Movie) {
 	rc <- movie
 }
 
-func GetRecommendations(rw *RequestWrapper, id string, rc chan []Movie) {
+func GetRecommendations(c pb.MoviemangerClient, id string, rc chan []Movie) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	resprec, err := rw.c.GetRecommendations(ctx, &pb.Params{Id: id})
+	resprec, err := c.GetRecommendations(ctx, &pb.Params{Id: id})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -99,22 +99,18 @@ func (rw *RequestWrapper) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Request) {
 
-	start := time.Now()
-
 	movieChan := make(chan Movie)
 	recommendChan := make(chan []Movie)
 	defer close(movieChan)
 	defer close(recommendChan)
 
-	go GetMovie(rw, mux.Vars(r)["id"], movieChan)
-	go GetRecommendations(rw, mux.Vars(r)["id"], recommendChan)
+	go GetMovie(rw.c, mux.Vars(r)["id"], movieChan)
+	go GetRecommendations(rw.c, mux.Vars(r)["id"], recommendChan)
 
 	movie := <-movieChan
 	recommendations := <-recommendChan
 
 	err := rw.templates.Execute(w, ViewData{Movie: movie, Movies: recommendations})
-	end := time.Now()
-	log.Printf("Order processed after %v seconds\n", end.Sub(start).Seconds())
 	log.Printf("Sending page: %v\n", movie.Id)
 	if err != nil {
 		log.Fatalln(err)
