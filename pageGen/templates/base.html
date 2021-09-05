@@ -1,4 +1,5 @@
 {{ define "header" }}
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -23,15 +24,15 @@
 <header class="p-3 bg-dark text-white">
     <div class="container">
         <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+            <nav class="navbar navbar-dark bg-dark">
+                <div class="container">
+                    <a class="navbar-brand" href="/" style="font-size: xx-large;"> 
+                        <img src="/img/logo-2.svg" alt="Scary Logo"  height="75vh" class="pe-1">
+                        Should I Be Scared?
+                    </a>
+                </div>
+            </nav>
 
-            <img src="/img/logo-2.svg" alt="Scary jack o'lantern"
-                style="max-height: 5vh; padding-right: 5vw;padding-right: 2.5vw;" href="/">
-
-
-
-            <a href="/" class="text-decoration-none text-reset">
-                <h1>Should I Be Scared?</h1>
-            </a>
             <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
                 <li><a href="/" class="nav-link px-2 text-secondary">Home</a></li>
                 <li><a href="/" class="nav-link px-2 text-white">Movies</a></li>
@@ -58,7 +59,8 @@
         </ul>
         <div class="text-center text-white">
             <img src="/img/tmdb.svg" alt="Data supplied by The Movie DB" style="max-height: 5vh;margin: 5vh;">
-            <p class="text-center text-white">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+            <p class="text-center text-white">This product uses the TMDB API but is not endorsed or certified by TMDB.
+            </p>
             <p class="text-center text-white">© 2021 ShouldIBeScared.com, Inc</p>
         </div>
     </footer>

@@ -7,8 +7,8 @@
 
     <div class="container">
         <div class="shadow card bg-dark py-3 my-4" style="border-radius: 3%;">
-            <img src="{{.Movie.ImageURL}}" class="card-img-top px-3"
-                style="border-radius: 3%;" alt="Poster for the film {{.Movie.Title}}">
+            <img src="{{.Movie.ImageURL}}" class="card-img-top px-3" style="border-radius: 3%;"
+                alt="Poster for the film {{.Movie.Title}}">
             <div class="card-body">
                 <h1 class="card-title text-white">{{.Movie.Title}}</h5>
                     <p class="card-text text-white">{{.Movie.Description}}</p>
@@ -32,6 +32,8 @@
                         <div class="card-body">
                             <h5 class="card-title text-white"
                                 style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Title}}</h5>
+                            <h6 class="card-title text-muted"
+                                style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Timestamp}}
                         </div>
                     </div>
                 </a>
