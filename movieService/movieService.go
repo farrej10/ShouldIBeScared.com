@@ -98,7 +98,7 @@ type Movie struct {
 func goDotEnvVariable(key string) string {
 
 	// load .env file
-	err := godotenv.Load("../.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error loading .env file %v", err)
 	}
@@ -317,6 +317,7 @@ func main() {
 	s := grpc.NewServer()
 	log.Println("Starting Service")
 	pb.RegisterMoviemangerServer(s, &MoviemangerServer{})
+	log.Printf("Listen %v\n", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

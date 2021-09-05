@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	address = "localhost:50051"
+	address = "movie-service:50051"
 )
 
 type ViewData struct {
@@ -176,8 +176,8 @@ func main() {
 	defer conn.Close()
 	c := pb.NewMoviemangerClient(conn)
 
-	templates := template.Must(template.ParseFiles("templates/movie.html", "templates/base.html"))
-	templatesIndex := template.Must(template.ParseFiles("templates/index.html", "templates/base.html"))
+	templates := template.Must(template.ParseFiles("./pageGen/templates/movie.html", "./pageGen/templates/base.html"))
+	templatesIndex := template.Must(template.ParseFiles("./pageGen/templates/index.html", "./pageGen/templates/base.html"))
 
 	rw := &RequestWrapper{templates: templates, c: c}
 	rwindex := &RequestWrapper{templates: templatesIndex, c: c}

@@ -3,18 +3,19 @@ version: "3.7"
 services:
 
   movie-service:
-    build: ./movieService
+    build: 
+      context: ./
+      dockerfile: ./movieService/Dockerfile
     container_name: movie-service
     restart: unless-stopped
-    ports:
-      - "50051:50051"
+
   
   page-gen:
-    build: ./pageGen
+    build: 
+      context: ./
+      dockerfile: ./pageGen/Dockerfile
     container_name: page-gen
     restart: unless-stopped
-    ports:
-      - "8085:8085"
     depends_on: 
       - movie-service
 
