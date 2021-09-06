@@ -176,6 +176,39 @@ func (s *MoviemangerServer) GetMovie(ctx context.Context, in *pb.Params) (*pb.Mo
 	return returnedmovie, nil
 }
 
+func (recommendations *Recommendations) ParseMovieList() []*pb.Movie {
+	movies := []*pb.Movie{}
+
+	for _, element := range recommendations.Results {
+
+		var tmpurl string
+
+		if element.PosterPath == "" && element.BackdropPath == "" {
+			log.Println("No Poster or Backdrop")
+			tmpurl = ""
+		} else if element.PosterPath == "" {
+			log.Println("No Poster")
+			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
+		} else {
+			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
+		}
+
+		movie := pb.Movie{
+			Title:       element.Title,
+			Description: element.Overview,
+			Timestamp:   element.ReleaseDate,
+			Url:         tmpurl,
+			Id:          strconv.Itoa(element.ID),
+		}
+		if movie.Url != "" {
+			movies = append(movies, &movie)
+		}
+
+	}
+
+	return movies
+}
+
 func SetRecommendationCache(client *redis.Client, body []byte, id string) {
 	err := client.Set(id+"recommend", []byte(body), cacheTimeout*time.Second).Err()
 	if err != nil {
@@ -210,38 +243,9 @@ func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Param
 			log.Fatalln(err)
 		}
 
-		movies := []*pb.Movie{}
-
-		for _, element := range recommendations.Results {
-
-			var tmpurl string
-
-			if element.PosterPath == "" && element.BackdropPath == "" {
-				log.Println("No Poster or Backdrop")
-				tmpurl = ""
-			} else if element.PosterPath == "" {
-				log.Println("No Poster")
-				tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
-			} else {
-				tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
-			}
-
-			movie := pb.Movie{
-				Title:       element.Title,
-				Description: element.Overview,
-				Timestamp:   element.ReleaseDate,
-				Url:         tmpurl,
-				Id:          strconv.Itoa(element.ID),
-			}
-			if movie.Url != "" {
-				movies = append(movies, &movie)
-			}
-
-		}
-
 		go SetRecommendationCache(s.redisClient, body, in.Id)
 
-		return &pb.Movies{Movies: movies}, nil
+		return &pb.Movies{Movies: recommendations.ParseMovieList()}, nil
 	}
 
 	var recommendations *Recommendations
@@ -249,36 +253,9 @@ func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Param
 	if err != nil {
 		log.Fatalln(err)
 	}
-	movies := []*pb.Movie{}
 
-	for _, element := range recommendations.Results {
-
-		var tmpurl string
-
-		if element.PosterPath == "" && element.BackdropPath == "" {
-			log.Println("No Poster or Backdrop")
-			tmpurl = ""
-		} else if element.PosterPath == "" {
-			log.Println("No Poster")
-			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
-		} else {
-			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
-		}
-
-		movie := pb.Movie{
-			Title:       element.Title,
-			Description: element.Overview,
-			Timestamp:   element.ReleaseDate,
-			Url:         tmpurl,
-			Id:          strconv.Itoa(element.ID),
-		}
-		if movie.Url != "" {
-			movies = append(movies, &movie)
-		}
-
-	}
 	log.Println("cache hit")
-	return &pb.Movies{Movies: movies}, nil
+	return &pb.Movies{Movies: recommendations.ParseMovieList()}, nil
 }
 
 func (s *MoviemangerServer) GetPopular(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
@@ -305,36 +282,7 @@ func (s *MoviemangerServer) GetPopular(ctx context.Context, in *pb.Params) (*pb.
 		log.Fatalln(err)
 	}
 
-	movies := []*pb.Movie{}
-
-	for _, element := range popular.Results {
-
-		var tmpurl string
-
-		if element.PosterPath == "" && element.BackdropPath == "" {
-			log.Println("No Poster or Backdrop")
-			tmpurl = ""
-		} else if element.PosterPath == "" {
-			log.Println("No Poster")
-			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
-		} else {
-			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
-		}
-
-		movie := pb.Movie{
-			Title:       element.Title,
-			Description: element.Overview,
-			Timestamp:   element.ReleaseDate,
-			Url:         tmpurl,
-			Id:          strconv.Itoa(element.ID),
-		}
-		if movie.Url != "" {
-			movies = append(movies, &movie)
-		}
-
-	}
-
-	return &pb.Movies{Movies: movies}, nil
+	return &pb.Movies{Movies: popular.ParseMovieList()}, nil
 }
 
 func (s *MoviemangerServer) GetTrending(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
@@ -361,36 +309,7 @@ func (s *MoviemangerServer) GetTrending(ctx context.Context, in *pb.Params) (*pb
 		log.Fatalln(err)
 	}
 
-	movies := []*pb.Movie{}
-
-	for _, element := range trending.Results {
-
-		var tmpurl string
-
-		if element.PosterPath == "" && element.BackdropPath == "" {
-			log.Println("No Poster or Backdrop")
-			tmpurl = ""
-		} else if element.PosterPath == "" {
-			log.Println("No Poster")
-			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
-		} else {
-			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
-		}
-
-		movie := pb.Movie{
-			Title:       element.Title,
-			Description: element.Overview,
-			Timestamp:   element.ReleaseDate,
-			Url:         tmpurl,
-			Id:          strconv.Itoa(element.ID),
-		}
-		if movie.Url != "" {
-			movies = append(movies, &movie)
-		}
-
-	}
-
-	return &pb.Movies{Movies: movies}, nil
+	return &pb.Movies{Movies: trending.ParseMovieList()}, nil
 }
 
 func main() {
