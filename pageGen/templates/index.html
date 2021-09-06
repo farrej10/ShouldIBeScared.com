@@ -12,15 +12,13 @@
 
             {{range .Trending}}
 
-            <div class="col" style="max-width: 15rem;">
+            <div class="col" style="max-width: 20rem;">
                 <a href="/movies/{{.Id}}" class="text-decoration-none text-reset">
                     <div class="shadow card bg-dark">
                         <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}">
-                        <div class="card-body">
-                            <h5 class="card-title text-white"
-                                style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Title}}</h5>
-                            <h6 class="card-title text-muted"
-                                style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Timestamp}}
+                        <div class="card-body" style="min-height: 10rem;">
+                            <h5 class="card-title text-white">{{.Title}}</h5>
+                            <h6 class="card-title text-muted">{{.Timestamp}}
                             </h6>
                         </div>
                     </div>
@@ -39,15 +37,13 @@
 
             {{range .Popular}}
 
-            <div class="col" style="max-width: 15rem;">
+            <div class="col" style="max-width: 20rem;">
                 <a href="/movies/{{.Id}}" class="text-decoration-none text-reset">
                     <div class="shadow card bg-dark">
                         <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}">
-                        <div class="card-body">
-                            <h5 class="card-title text-white"
-                                style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Title}}</h5>
-                            <h6 class="card-title text-muted"
-                                style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{.Timestamp}}
+                        <div class="card-body" style="min-height: 10rem;">
+                            <h5 class="card-title text-white">{{.Title}}</h5>
+                            <h6 class="card-title text-muted">{{.Timestamp}}
                             </h6>
                         </div>
                     </div>

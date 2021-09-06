@@ -26,6 +26,27 @@
         overflow-x: hidden;
     }
 
+    h6,
+    h5 {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+    }
+
+
+    @media screen and (max-width: 992px) {
+
+        h5,
+        h6 {
+            white-space: normal;
+            text-overflow: inherit;
+            overflow: visible;
+        }
+
+    }
+
+    
     body {
         position: relative
     }
@@ -60,7 +81,7 @@
 
 {{define "footer"}}
 <div class="container bg-dark">
-    <footer class="py-3 my-4">
+    <footer class="py-3 mt-4">
         <ul class="nav justify-content-center border-bottom pb-3 mb-3">
             <li class="nav-item"><a href="#" class="nav-link px-2 text-white">Home</a></li>
             <li class="nav-item"><a href="#" class="nav-link px-2 text-white">FAQs</a></li>
