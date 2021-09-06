@@ -20,7 +20,7 @@ import (
 
 const (
 	port         = ":50051"
-	cacheTimeout = 60
+	cacheTimeout = 18000
 )
 
 type MoviemangerServer struct {
@@ -206,44 +206,68 @@ func (recommendations *Recommendations) ParseMovieList() []*pb.Movie {
 
 	}
 
+	if len(movies) == 0 {
+		url := "https://api.themoviedb.org/3/movie/popular"
+
+		var popular *Recommendations
+		_, err := GetMoviesHttp(url, &popular)
+		if err != nil {
+			log.Println("Error on response", err)
+		}
+		return popular.ParseMovieList()
+	}
+
 	return movies
 }
 
-func SetRecommendationCache(client *redis.Client, body []byte, id string) {
-	err := client.Set(id+"recommend", []byte(body), cacheTimeout*time.Second).Err()
+func SetMovieListCache(client *redis.Client, body []byte, id string, listname string) {
+	err := client.Set(id+listname, []byte(body), cacheTimeout*time.Second).Err()
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println("Recommend Cache set")
+	log.Println(listname + " Cache set")
 }
+
+func GetMoviesHttp(url string, r **Recommendations) ([]byte, error) {
+
+	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+	client := &http.Client{Timeout: time.Second * 10}
+
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", bearer)
+	// Send req using http Client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error while reading the response bytes:", err)
+	}
+
+	err = json.Unmarshal([]byte(body), &r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return body, err
+}
+
 func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
 
 	redisJSON, err := s.redisClient.Get(in.Id + "recommend").Result()
 	if err != nil {
-		var bearer = "Bearer " + goDotEnvVariable("TOKEN")
-		client := &http.Client{Timeout: time.Second * 10}
+
 		url := "https://api.themoviedb.org/3/movie/" + in.Id + "/recommendations"
-
-		req, _ := http.NewRequest("GET", url, nil)
-		req.Header.Add("Authorization", bearer)
-		// Send req using http Client
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Println("Error on response.\n[ERROR] -", err)
-		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Println("Error while reading the response bytes:", err)
-		}
 		var recommendations *Recommendations
-		err = json.Unmarshal([]byte(body), &recommendations)
+		body, err := GetMoviesHttp(url, &recommendations)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println("Error on response", err)
 		}
 
-		go SetRecommendationCache(s.redisClient, body, in.Id)
+		go SetMovieListCache(s.redisClient, body, in.Id, "recommend")
 
 		return &pb.Movies{Movies: recommendations.ParseMovieList()}, nil
 	}
@@ -254,30 +278,28 @@ func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Param
 		log.Fatalln(err)
 	}
 
-	log.Println("cache hit")
 	return &pb.Movies{Movies: recommendations.ParseMovieList()}, nil
 }
 
 func (s *MoviemangerServer) GetPopular(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
-
-	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
-	client := &http.Client{Timeout: time.Second * 10}
-	url := "https://api.themoviedb.org/3/movie/popular"
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", bearer)
-	// Send req using http Client
-	resp, err := client.Do(req)
+	redisJSON, err := s.redisClient.Get(in.Id + "popular").Result()
 	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
-	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Error while reading the response bytes:", err)
+		url := "https://api.themoviedb.org/3/movie/popular"
+
+		var popular *Recommendations
+		body, err := GetMoviesHttp(url, &popular)
+		if err != nil {
+			log.Println("Error on response", err)
+		}
+
+		go SetMovieListCache(s.redisClient, body, in.Id, "popular")
+
+		return &pb.Movies{Movies: popular.ParseMovieList()}, nil
 	}
+
 	var popular *Recommendations
-	err = json.Unmarshal([]byte(body), &popular)
+	err = json.Unmarshal([]byte(redisJSON), &popular)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -287,26 +309,22 @@ func (s *MoviemangerServer) GetPopular(ctx context.Context, in *pb.Params) (*pb.
 
 func (s *MoviemangerServer) GetTrending(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
 
-	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
-	client := &http.Client{Timeout: time.Second * 10}
-	url := "https://api.themoviedb.org/3/trending/movie/week"
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", bearer)
-	// Send req using http Client
-	resp, err := client.Do(req)
+	redisJSON, err := s.redisClient.Get(in.Id + "trending").Result()
 	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
-	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Error while reading the response bytes:", err)
+		url := "https://api.themoviedb.org/3/trending/movie/week"
+		var trending *Recommendations
+		body, err := GetMoviesHttp(url, &trending)
+		if err != nil {
+			return nil, err
+		}
+		go SetMovieListCache(s.redisClient, body, in.Id, "trending")
+		return &pb.Movies{Movies: trending.ParseMovieList()}, nil
 	}
 	var trending *Recommendations
-	err = json.Unmarshal([]byte(body), &trending)
+	err = json.Unmarshal([]byte(redisJSON), &trending)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Error on response", err)
 	}
 
 	return &pb.Movies{Movies: trending.ParseMovieList()}, nil
