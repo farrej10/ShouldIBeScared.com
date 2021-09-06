@@ -12,16 +12,20 @@ import (
 	"time"
 
 	pb "github.com/farrej10/ShouldIBeScared.com/movie"
+
+	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 )
 
 const (
-	port = ":50051"
+	port         = ":50051"
+	cacheTimeout = 60
 )
 
 type MoviemangerServer struct {
 	pb.UnimplementedMoviemangerServer
+	redisClient *redis.Client
 }
 
 type Recommendations struct {
@@ -106,31 +110,61 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func (s *MoviemangerServer) GetMovie(ctx context.Context, in *pb.Params) (*pb.Movie, error) {
-	url := "https://api.themoviedb.org/3/movie/" + in.Id
-	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
-
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", bearer)
-	// Send req using http Client
-	client := &http.Client{Timeout: time.Second * 10}
-	resp, err := client.Do(req)
+func SetMovieCache(client *redis.Client, body []byte, id string) {
+	err := client.Set(id, []byte(body), cacheTimeout*time.Second).Err()
 	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
+		log.Println(err)
 	}
-	defer resp.Body.Close()
+}
 
-	body, err := ioutil.ReadAll(resp.Body)
+func (s *MoviemangerServer) GetMovie(ctx context.Context, in *pb.Params) (*pb.Movie, error) {
+
+	redisJSON, err := s.redisClient.Get(in.Id).Result()
 	if err != nil {
-		log.Println("Error while reading the response bytes:", err)
+
+		url := "https://api.themoviedb.org/3/movie/" + in.Id
+		var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+
+		req, _ := http.NewRequest("GET", url, nil)
+		req.Header.Add("Authorization", bearer)
+		// Send req using http Client
+		client := &http.Client{Timeout: time.Second * 10}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Println("Error on response.\n[ERROR] -", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Error while reading the response bytes:", err)
+		}
+
+		var movie *Movie
+		err = json.Unmarshal([]byte(body), &movie)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		returnedmovie := &pb.Movie{
+			Title:       movie.OriginalTitle,
+			Description: movie.Overview,
+			Timestamp:   movie.ReleaseDate,
+			Url:         "https://image.tmdb.org/t/p/w1280" + movie.BackdropPath,
+			Id:          strconv.Itoa(movie.ID),
+		}
+
+		//add to redis before returning
+		go SetMovieCache(s.redisClient, body, in.Id)
+
+		return returnedmovie, nil
 	}
 
 	var movie *Movie
-	err = json.Unmarshal([]byte(body), &movie)
+	err = json.Unmarshal([]byte(redisJSON), &movie)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	returnedmovie := &pb.Movie{
 		Title:       movie.OriginalTitle,
 		Description: movie.Overview,
@@ -142,31 +176,79 @@ func (s *MoviemangerServer) GetMovie(ctx context.Context, in *pb.Params) (*pb.Mo
 	return returnedmovie, nil
 }
 
+func SetRecommendationCache(client *redis.Client, body []byte, id string) {
+	err := client.Set(id+"recommend", []byte(body), cacheTimeout*time.Second).Err()
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("Recommend Cache set")
+}
 func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
 
-	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
-	client := &http.Client{Timeout: time.Second * 10}
-	url := "https://api.themoviedb.org/3/movie/" + in.Id + "/recommendations"
-
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", bearer)
-	// Send req using http Client
-	resp, err := client.Do(req)
+	redisJSON, err := s.redisClient.Get(in.Id + "recommend").Result()
 	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
-	}
-	defer resp.Body.Close()
+		var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+		client := &http.Client{Timeout: time.Second * 10}
+		url := "https://api.themoviedb.org/3/movie/" + in.Id + "/recommendations"
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Error while reading the response bytes:", err)
+		req, _ := http.NewRequest("GET", url, nil)
+		req.Header.Add("Authorization", bearer)
+		// Send req using http Client
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Println("Error on response.\n[ERROR] -", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Error while reading the response bytes:", err)
+		}
+		var recommendations *Recommendations
+		err = json.Unmarshal([]byte(body), &recommendations)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		movies := []*pb.Movie{}
+
+		for _, element := range recommendations.Results {
+
+			var tmpurl string
+
+			if element.PosterPath == "" && element.BackdropPath == "" {
+				log.Println("No Poster or Backdrop")
+				tmpurl = ""
+			} else if element.PosterPath == "" {
+				log.Println("No Poster")
+				tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
+			} else {
+				tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
+			}
+
+			movie := pb.Movie{
+				Title:       element.Title,
+				Description: element.Overview,
+				Timestamp:   element.ReleaseDate,
+				Url:         tmpurl,
+				Id:          strconv.Itoa(element.ID),
+			}
+			if movie.Url != "" {
+				movies = append(movies, &movie)
+			}
+
+		}
+
+		go SetRecommendationCache(s.redisClient, body, in.Id)
+
+		return &pb.Movies{Movies: movies}, nil
 	}
+
 	var recommendations *Recommendations
-	err = json.Unmarshal([]byte(body), &recommendations)
+	err = json.Unmarshal([]byte(redisJSON), &recommendations)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	movies := []*pb.Movie{}
 
 	for _, element := range recommendations.Results {
@@ -195,7 +277,7 @@ func (s *MoviemangerServer) GetRecommendations(ctx context.Context, in *pb.Param
 		}
 
 	}
-
+	log.Println("cache hit")
 	return &pb.Movies{Movies: movies}, nil
 }
 
@@ -316,7 +398,15 @@ func main() {
 	lis, _ := net.Listen("tcp", port)
 	s := grpc.NewServer()
 	log.Println("Starting Service")
-	pb.RegisterMoviemangerServer(s, &MoviemangerServer{})
+
+	client := redis.NewClient(&redis.Options{
+		Addr:     "redis:6379",
+		Password: "",
+		DB:       0,
+	})
+
+	log.Println("Connecting to Redis")
+	pb.RegisterMoviemangerServer(s, &MoviemangerServer{redisClient: client})
 	log.Printf("Listen %v\n", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
