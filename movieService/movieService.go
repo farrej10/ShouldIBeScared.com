@@ -190,7 +190,7 @@ func (recommendations *Recommendations) ParseMovieList() []*pb.Movie {
 			log.Println("No Poster")
 			tmpurl = "https://image.tmdb.org/t/p/w185" + element.BackdropPath
 		} else {
-			tmpurl = "https://image.tmdb.org/t/p/w154" + element.PosterPath
+			tmpurl = "https://image.tmdb.org/t/p/w342" + element.PosterPath
 		}
 
 		movie := pb.Movie{

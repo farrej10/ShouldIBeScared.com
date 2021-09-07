@@ -8,19 +8,14 @@
         <h1>Trending Movies This Week</h1>
     </div>
     <div class="container px-4 pb-3 mb-3 pt-3 mt-3">
-        <div class="row row-cols-2 row-cols g-5 justify-content-md-center">
+        <div class="row row-cols-2 row-cols g-3 justify-content-md-center">
 
             {{range .Trending}}
 
-            <div class="col" style="max-width: 20rem;">
+            <div class="col" style="max-width: 11rem;">
                 <a href="/movies/{{.Id}}" class="text-decoration-none text-reset">
-                    <div class="shadow card bg-dark">
-                        <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}">
-                        <div class="card-body" style="min-height: 10rem;">
-                            <h5 class="card-title text-white">{{.Title}}</h5>
-                            <h6 class="card-title text-muted">{{.Timestamp}}
-                            </h6>
-                        </div>
+                    <div class="shadow card bg-dark" style="border-radius: 10%;">
+                        <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}" style="border-radius: 10%;">
                     </div>
                 </a>
             </div>
@@ -33,19 +28,14 @@
         <h1>Popular Movies This Week</h1>
     </div>
     <div class="container px-4 pb-3 mb-3 pt-3 mt-3">
-        <div class="row row-cols-2 row-cols g-5 justify-content-md-center">
+        <div class="row row-cols-2 row-cols g-3 justify-content-md-center">
 
             {{range .Popular}}
 
-            <div class="col" style="max-width: 20rem;">
+            <div class="col" style="max-width: 11rem;border-radius: 10%;">
                 <a href="/movies/{{.Id}}" class="text-decoration-none text-reset">
-                    <div class="shadow card bg-dark">
-                        <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}">
-                        <div class="card-body" style="min-height: 10rem;">
-                            <h5 class="card-title text-white">{{.Title}}</h5>
-                            <h6 class="card-title text-muted">{{.Timestamp}}
-                            </h6>
-                        </div>
+                    <div class="shadow card bg-dark" style="border-radius: 10%;">
+                        <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}" style="border-radius: 10%;">
                     </div>
                 </a>
             </div>
