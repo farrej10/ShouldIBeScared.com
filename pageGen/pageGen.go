@@ -167,6 +167,15 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("here")
+	if r.Method == "POST" {
+		r.ParseForm()
+		log.Println(r.Form["Search"])
+	}
+
+}
+
 func main() {
 
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
@@ -185,6 +194,8 @@ func main() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	log.Println("Starting router")
 	myRouter.HandleFunc("/", rwindex.IndexHandler)
-	myRouter.HandleFunc("/movies/{id}", rw.MoviePageHandler)
+	myRouter.HandleFunc("/movies/{id:[0-9]+}", rw.MoviePageHandler)
+	myRouter.HandleFunc("/search", rw.SearchHandler)
+
 	http.ListenAndServe(":8085", myRouter)
 }
