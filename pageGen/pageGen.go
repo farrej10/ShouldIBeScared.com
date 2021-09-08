@@ -168,10 +168,10 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("here")
-	if r.Method == "POST" {
-		r.ParseForm()
-		log.Println(r.Form["Search"])
+
+	err := rw.templates.Execute(w, r.URL.Query())
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 }
@@ -187,15 +187,17 @@ func main() {
 
 	templates := template.Must(template.ParseFiles("./pageGen/templates/movie.html", "./pageGen/templates/base.html"))
 	templatesIndex := template.Must(template.ParseFiles("./pageGen/templates/index.html", "./pageGen/templates/base.html"))
+	templatesSearch := template.Must(template.ParseFiles("./pageGen/templates/search.html", "./pageGen/templates/base.html"))
 
 	rw := &RequestWrapper{templates: templates, c: c}
 	rwindex := &RequestWrapper{templates: templatesIndex, c: c}
+	rwsearch := &RequestWrapper{templates: templatesSearch, c: c}
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 	log.Println("Starting router")
 	myRouter.HandleFunc("/", rwindex.IndexHandler)
 	myRouter.HandleFunc("/movies/{id:[0-9]+}", rw.MoviePageHandler)
-	myRouter.HandleFunc("/search", rw.SearchHandler)
+	myRouter.HandleFunc("/search", rwsearch.SearchHandler)
 
 	http.ListenAndServe(":8085", myRouter)
 }
