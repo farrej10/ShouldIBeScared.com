@@ -169,7 +169,7 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 
 func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) {
 
-	err := rw.templates.Execute(w, r.URL.Query())
+	err := rw.templates.Execute(w, r.URL.Query()["search"])
 	if err != nil {
 		log.Fatalln(err)
 	}
