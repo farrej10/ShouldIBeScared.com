@@ -1,0 +1,29 @@
+{{define "searchitem"}}
+{{range .Movies}}
+
+<div class="container bg-dark my-3 py-3" style="border-radius: 1rem;">
+    <div class="row g-3">
+        <div class="col" style="max-width: 11rem;">
+            <a href="/movies/{{.Id}}" class="text-decoration-none text-reset">
+
+                <img src="{{.ImageURL}}" class="card-img-top" alt="Poster for the film {{.Title}}"
+                    style="border-radius: 10%;max-width: 11rem;">
+
+            </a>
+        </div>
+
+        <div class="col text-white">
+            <div class="row">
+                <div class="col">
+                    <h3>{{.Title}}</h3>
+                    <p>{{.Description}}</p>
+                    <p><small>{{.Timestamp}}</small></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{{end}}
+{{end}}

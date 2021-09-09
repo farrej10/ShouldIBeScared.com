@@ -23,6 +23,7 @@ type MoviemangerClient interface {
 	GetRecommendations(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
 	GetPopular(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
 	GetTrending(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
+	Search(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
 }
 
 type moviemangerClient struct {
@@ -78,6 +79,15 @@ func (c *moviemangerClient) GetTrending(ctx context.Context, in *Params, opts ..
 	return out, nil
 }
 
+func (c *moviemangerClient) Search(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error) {
+	out := new(Movies)
+	err := c.cc.Invoke(ctx, "/movie.Moviemanger/Search", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MoviemangerServer is the server API for Moviemanger service.
 // All implementations must embed UnimplementedMoviemangerServer
 // for forward compatibility
@@ -87,6 +97,7 @@ type MoviemangerServer interface {
 	GetRecommendations(context.Context, *Params) (*Movies, error)
 	GetPopular(context.Context, *Params) (*Movies, error)
 	GetTrending(context.Context, *Params) (*Movies, error)
+	Search(context.Context, *Params) (*Movies, error)
 	mustEmbedUnimplementedMoviemangerServer()
 }
 
@@ -108,6 +119,9 @@ func (UnimplementedMoviemangerServer) GetPopular(context.Context, *Params) (*Mov
 }
 func (UnimplementedMoviemangerServer) GetTrending(context.Context, *Params) (*Movies, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTrending not implemented")
+}
+func (UnimplementedMoviemangerServer) Search(context.Context, *Params) (*Movies, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
 func (UnimplementedMoviemangerServer) mustEmbedUnimplementedMoviemangerServer() {}
 
@@ -212,6 +226,24 @@ func _Moviemanger_GetTrending_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Moviemanger_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Params)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MoviemangerServer).Search(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/movie.Moviemanger/Search",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MoviemangerServer).Search(ctx, req.(*Params))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Moviemanger_ServiceDesc is the grpc.ServiceDesc for Moviemanger service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -238,6 +270,10 @@ var Moviemanger_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTrending",
 			Handler:    _Moviemanger_GetTrending_Handler,
+		},
+		{
+			MethodName: "Search",
+			Handler:    _Moviemanger_Search_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

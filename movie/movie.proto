@@ -10,10 +10,12 @@ service Moviemanger {
     rpc GetRecommendations (Params) returns (Movies) {}
     rpc GetPopular (Params) returns (Movies) {}
     rpc GetTrending (Params) returns (Movies) {}
+    rpc Search (Params) returns (Movies) {}
 }
 
 message Params {
     string id = 1;
+    int32 page = 2;
 }
 
 message Movie {

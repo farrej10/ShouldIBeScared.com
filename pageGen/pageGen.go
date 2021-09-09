@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	pb "github.com/farrej10/ShouldIBeScared.com/movie"
@@ -167,9 +169,44 @@ func (rw *RequestWrapper) MoviePageHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func Sanitize(s *string) {
+
+	reg, err := regexp.Compile("[^a-zA-Z0-9 ]+")
+	if err != nil {
+		log.Fatal(err)
+	}
+	*s = reg.ReplaceAllString(*s, "")
+	*s = strings.Replace(*s, " ", "+", -1)
+}
+
 func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) {
 
-	err := rw.templates.Execute(w, r.URL.Query()["search"])
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	searchString := r.URL.Query()["search"][0]
+
+	Sanitize(&searchString)
+	log.Println(searchString)
+
+	resprec, err := rw.c.Search(ctx, &pb.Params{Id: searchString})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	search := []Movie{}
+	for _, movie := range resprec.Movies {
+		data := Movie{
+			Title:       movie.Title,
+			Description: movie.Description,
+			Timestamp:   movie.Timestamp,
+			ImageURL:    movie.Url,
+			Id:          movie.Id,
+		}
+		search = append(search, data)
+	}
+	movies := search
+
+	err = rw.templates.Execute(w, ViewData{Movies: movies})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -187,7 +224,7 @@ func main() {
 
 	templates := template.Must(template.ParseFiles("./pageGen/templates/movie.html", "./pageGen/templates/base.html"))
 	templatesIndex := template.Must(template.ParseFiles("./pageGen/templates/index.html", "./pageGen/templates/base.html"))
-	templatesSearch := template.Must(template.ParseFiles("./pageGen/templates/search.html", "./pageGen/templates/base.html"))
+	templatesSearch := template.Must(template.ParseFiles("./pageGen/templates/search.html", "./pageGen/templates/base.html", "./pageGen/templates/searchitem.html"))
 
 	rw := &RequestWrapper{templates: templates, c: c}
 	rwindex := &RequestWrapper{templates: templatesIndex, c: c}
