@@ -36,6 +36,17 @@ type Movie struct {
 	Id          string
 }
 
+type SearchResult struct {
+	Results []Movie
+	Pages   int32
+}
+
+type SearchView struct {
+	Movies []Movie
+	Query  string
+	Pages  []int
+}
+
 type RequestWrapper struct {
 	templates *template.Template
 	c         pb.MoviemangerClient
@@ -179,22 +190,16 @@ func Sanitize(s *string) {
 	*s = strings.Replace(*s, " ", "+", -1)
 }
 
-func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) {
-
+func Search(c pb.MoviemangerClient, query string, page string, rc chan SearchResult) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	searchString := r.URL.Query()["search"][0]
-
-	Sanitize(&searchString)
-	log.Println(searchString)
-
-	resprec, err := rw.c.Search(ctx, &pb.Params{Id: searchString})
+	resprec, err := c.Search(ctx, &pb.Params{Id: query, Page: page})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	search := []Movie{}
-	for _, movie := range resprec.Movies {
+	for _, movie := range resprec.Results.Movies {
 		data := Movie{
 			Title:       movie.Title,
 			Description: movie.Description,
@@ -204,9 +209,31 @@ func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) 
 		}
 		search = append(search, data)
 	}
-	movies := search
+	rc <- SearchResult{Results: search, Pages: resprec.Pages}
+}
 
-	err = rw.templates.Execute(w, ViewData{Movies: movies})
+func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) {
+	searchString := r.URL.Query()["search"][0]
+	Sanitize(&searchString)
+	var page string
+	if r.URL.Query()["page"] != nil {
+		page = r.URL.Query()["page"][0]
+	} else {
+		page = "1"
+	}
+	searchChan := make(chan SearchResult)
+	defer close(searchChan)
+
+	go Search(rw.c, searchString, page, searchChan)
+
+	result := <-searchChan
+	pages := make([]int, result.Pages)
+	for i := range pages {
+		pages[i] = 1 + i
+	}
+	log.Println(searchString)
+	searchString = strings.Replace(searchString, "+", "%2b", -1)
+	err := rw.templates.Execute(w, SearchView{Movies: result.Results, Query: searchString, Pages: pages})
 	if err != nil {
 		log.Fatalln(err)
 	}

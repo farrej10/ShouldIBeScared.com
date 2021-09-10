@@ -6,14 +6,14 @@
 
 
     <div class="container px-4 pb-3 mb-3 pt-3 mt-3">
-        {{template "searchitem" .}}
+        {{template "searchitem" .Movies}}
     </div>
 
-    <nav class="container mx-auto">
-        <ul class="pagination pagination-lg">
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
+    <nav class="container">
+        <ul class="pagination pagination-lg justify-content-center">
+            {{range .Pages}}
+            <li class="page-item"><a class="page-link" href="/search?search={{$.Query}}&page={{.}}">{{.}}</a></li>
+            {{end}}
         </ul>
     </nav>
 

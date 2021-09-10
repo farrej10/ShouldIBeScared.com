@@ -330,20 +330,20 @@ func (s *MoviemangerServer) GetTrending(ctx context.Context, in *pb.Params) (*pb
 	return &pb.Movies{Movies: trending.ParseMovieList()}, nil
 }
 
-func (s *MoviemangerServer) Search(ctx context.Context, in *pb.Params) (*pb.Movies, error) {
+func (s *MoviemangerServer) Search(ctx context.Context, in *pb.Params) (*pb.SearchResult, error) {
 
-	redisJSON, err := s.redisClient.Get(in.Id + "search").Result()
-	log.Println(in.Id)
+	redisJSON, err := s.redisClient.Get(in.Id + in.Page + "search").Result()
 	if err != nil {
 
-		url := "https://api.themoviedb.org/3/search/movie?language=en-US&page=1&include_adult=false&query=" + in.Id
+		url := "https://api.themoviedb.org/3/search/movie?language=en-US&page=" + in.Page + "&include_adult=false&query=" + in.Id
+
 		var searchResults *Recommendations
 		body, err := GetMoviesHttp(url, &searchResults)
 		if err != nil {
 			return nil, err
 		}
-		go SetMovieListCache(s.redisClient, body, in.Id, "search")
-		return &pb.Movies{Movies: searchResults.ParseMovieList()}, nil
+		go SetMovieListCache(s.redisClient, body, in.Id, in.Page+"search")
+		return &pb.SearchResult{Results: &pb.Movies{Movies: searchResults.ParseMovieList()}, Pages: int32(searchResults.TotalPages)}, nil
 	}
 	var searchResults *Recommendations
 	err = json.Unmarshal([]byte(redisJSON), &searchResults)
@@ -351,7 +351,7 @@ func (s *MoviemangerServer) Search(ctx context.Context, in *pb.Params) (*pb.Movi
 		log.Println("Error on response", err)
 	}
 
-	return &pb.Movies{Movies: searchResults.ParseMovieList()}, nil
+	return &pb.SearchResult{Results: &pb.Movies{Movies: searchResults.ParseMovieList()}, Pages: int32(searchResults.TotalPages)}, nil
 }
 
 func main() {

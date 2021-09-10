@@ -23,7 +23,7 @@ type MoviemangerClient interface {
 	GetRecommendations(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
 	GetPopular(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
 	GetTrending(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
-	Search(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error)
+	Search(ctx context.Context, in *Params, opts ...grpc.CallOption) (*SearchResult, error)
 }
 
 type moviemangerClient struct {
@@ -79,8 +79,8 @@ func (c *moviemangerClient) GetTrending(ctx context.Context, in *Params, opts ..
 	return out, nil
 }
 
-func (c *moviemangerClient) Search(ctx context.Context, in *Params, opts ...grpc.CallOption) (*Movies, error) {
-	out := new(Movies)
+func (c *moviemangerClient) Search(ctx context.Context, in *Params, opts ...grpc.CallOption) (*SearchResult, error) {
+	out := new(SearchResult)
 	err := c.cc.Invoke(ctx, "/movie.Moviemanger/Search", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ type MoviemangerServer interface {
 	GetRecommendations(context.Context, *Params) (*Movies, error)
 	GetPopular(context.Context, *Params) (*Movies, error)
 	GetTrending(context.Context, *Params) (*Movies, error)
-	Search(context.Context, *Params) (*Movies, error)
+	Search(context.Context, *Params) (*SearchResult, error)
 	mustEmbedUnimplementedMoviemangerServer()
 }
 
@@ -120,7 +120,7 @@ func (UnimplementedMoviemangerServer) GetPopular(context.Context, *Params) (*Mov
 func (UnimplementedMoviemangerServer) GetTrending(context.Context, *Params) (*Movies, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTrending not implemented")
 }
-func (UnimplementedMoviemangerServer) Search(context.Context, *Params) (*Movies, error) {
+func (UnimplementedMoviemangerServer) Search(context.Context, *Params) (*SearchResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
 func (UnimplementedMoviemangerServer) mustEmbedUnimplementedMoviemangerServer() {}
