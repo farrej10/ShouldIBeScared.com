@@ -11,8 +11,8 @@
 
     <nav class="container">
         <ul class="pagination pagination-lg justify-content-center">
-            {{range .Pages}}
-            <li class="page-item"><a class="page-link" href="/search?search={{$.Query}}&page={{.}}">{{.}}</a></li>
+            {{range $index, $element:= .Pages}}
+            <li class="page-item {{if eq $index $.Page}}active{{end}}"><a class="page-link" href="/search?search={{$.Query}}&page={{$element}}">{{$element}}</a></li>
             {{end}}
         </ul>
     </nav>

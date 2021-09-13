@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,6 +46,7 @@ type SearchView struct {
 	Movies []Movie
 	Query  string
 	Pages  []int
+	Page   int
 }
 
 type RequestWrapper struct {
@@ -211,6 +213,12 @@ func Search(c pb.MoviemangerClient, query string, page string, rc chan SearchRes
 	}
 	rc <- SearchResult{Results: search, Pages: resprec.Pages}
 }
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	searchString := r.URL.Query()["search"][0]
@@ -227,13 +235,16 @@ func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) 
 	go Search(rw.c, searchString, page, searchChan)
 
 	result := <-searchChan
-	pages := make([]int, result.Pages)
+
+	tmp := min(int(5-result.Pages%5), int(result.Pages))
+	pages := make([]int, tmp)
 	for i := range pages {
 		pages[i] = 1 + i
 	}
 	log.Println(searchString)
-	searchString = strings.Replace(searchString, "+", "%2b", -1)
-	err := rw.templates.Execute(w, SearchView{Movies: result.Results, Query: searchString, Pages: pages})
+	p, _ := strconv.Atoi(page)
+	searchString = strings.Replace(searchString, "+", " ", -1)
+	err := rw.templates.Execute(w, SearchView{Movies: result.Results, Query: searchString, Pages: pages, Page: p - 1})
 	if err != nil {
 		log.Fatalln(err)
 	}

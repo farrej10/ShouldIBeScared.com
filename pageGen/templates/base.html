@@ -63,10 +63,10 @@
             </nav>
 
             <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-                <li><a href="/" class="nav-link px-2 text-secondary">
+                <li><a href="/" class="nav-link px-2 text-{{if .}}white{{else}}secondary{{end}}">
                         <h2>Home</h2>
                     </a></li>
-                <li><a href="/" class="nav-link px-2 text-white">
+                <li><a href="/" class="nav-link px-2 text-{{if .}}secondary{{else}}white{{end}}">
                         <h2>Movies</h2>
                     </a></li>
                 <li><a href="/" class="nav-link px-2 text-white">
