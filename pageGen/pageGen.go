@@ -17,6 +17,7 @@ import (
 
 const (
 	address = "movie-service:50051"
+	scraper = "http://scraper-service:8089/"
 )
 
 type ViewData struct {
@@ -251,6 +252,16 @@ func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) 
 
 }
 
+func ScraperHandler(w http.ResponseWriter, r *http.Request) {
+	req, _ := http.NewRequest("GET", scraper, nil)
+	client := &http.Client{Timeout: time.Second * 10}
+	_, err := client.Do(req)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
 func main() {
 
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
@@ -273,6 +284,7 @@ func main() {
 	myRouter.HandleFunc("/", rwindex.IndexHandler)
 	myRouter.HandleFunc("/movies/{id:[0-9]+}", rw.MoviePageHandler)
 	myRouter.HandleFunc("/search", rwsearch.SearchHandler)
+	myRouter.HandleFunc("/scraper", ScraperHandler)
 
 	http.ListenAndServe(":8085", myRouter)
 }

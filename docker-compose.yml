@@ -22,6 +22,14 @@ services:
     restart: unless-stopped
     depends_on: 
       - movie-service
+      - scraper-service
+
+  scraper-service:
+    build: 
+      context: ./
+      dockerfile: ./scraperService/Dockerfile
+    container_name: scraper-service
+    restart: unless-stopped
 
   nginx:
     build: ./nginx
