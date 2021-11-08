@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"regexp"
@@ -255,11 +257,17 @@ func (rw *RequestWrapper) SearchHandler(w http.ResponseWriter, r *http.Request) 
 func ScraperHandler(w http.ResponseWriter, r *http.Request) {
 	req, _ := http.NewRequest("GET", scraper, nil)
 	client := &http.Client{Timeout: time.Second * 10}
-	_, err := client.Do(req)
+	resp, err := client.Do(req)
 
 	if err != nil {
 		log.Fatalln(err)
 	}
+	w.WriteHeader(resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("failed to get scraper response")
+	}
+	fmt.Fprint(w, string(body))
 }
 
 func main() {
