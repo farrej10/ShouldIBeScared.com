@@ -11,6 +11,8 @@ services:
       context: ./
       dockerfile: ./movieService/Dockerfile
     container_name: movie-service
+    environment:
+      TOKEN: ${TOKEN}
     restart: unless-stopped
 
   

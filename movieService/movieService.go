@@ -110,6 +110,16 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
+func getVariable(key string) string {
+
+	token := os.Getenv(key)
+	if token == "" {
+		log.Fatalf("error loading token")
+	}
+
+	return token
+}
+
 func SetMovieCache(client *redis.Client, body []byte, id string) {
 	err := client.Set(id, []byte(body), cacheTimeout*time.Second).Err()
 	if err != nil {
@@ -123,7 +133,7 @@ func (s *MoviemangerServer) GetMovie(ctx context.Context, in *pb.Params) (*pb.Mo
 	if err != nil {
 
 		url := "https://api.themoviedb.org/3/movie/" + in.Id
-		var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+		var bearer = "Bearer " + getVariable("TOKEN")
 
 		req, _ := http.NewRequest("GET", url, nil)
 		req.Header.Add("Authorization", bearer)
@@ -230,7 +240,7 @@ func SetMovieListCache(client *redis.Client, body []byte, id string, listname st
 
 func GetMoviesHttp(url string, r **Recommendations) ([]byte, error) {
 
-	var bearer = "Bearer " + goDotEnvVariable("TOKEN")
+	var bearer = "Bearer " + getVariable("TOKEN")
 	client := &http.Client{Timeout: time.Second * 10}
 
 	req, _ := http.NewRequest("GET", url, nil)

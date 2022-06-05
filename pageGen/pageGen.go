@@ -279,9 +279,9 @@ func main() {
 	defer conn.Close()
 	c := pb.NewMoviemangerClient(conn)
 
-	templates := template.Must(template.ParseFiles("./pageGen/templates/movie.html", "./pageGen/templates/base.html"))
-	templatesIndex := template.Must(template.ParseFiles("./pageGen/templates/index.html", "./pageGen/templates/base.html"))
-	templatesSearch := template.Must(template.ParseFiles("./pageGen/templates/search.html", "./pageGen/templates/base.html", "./pageGen/templates/searchitem.html"))
+	templates := template.Must(template.ParseFiles("/var/www/movie.html", "/var/www/base.html"))
+	templatesIndex := template.Must(template.ParseFiles("/var/www/index.html", "/var/www/base.html"))
+	templatesSearch := template.Must(template.ParseFiles("/var/www/search.html", "/var/www/base.html", "/var/www/searchitem.html"))
 
 	rw := &RequestWrapper{templates: templates, c: c}
 	rwindex := &RequestWrapper{templates: templatesIndex, c: c}
