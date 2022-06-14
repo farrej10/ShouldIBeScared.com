@@ -3,6 +3,18 @@ FROM golang:1.17-alpine as builder
 RUN apk update
 RUN apk add --no-cache git ca-certificates && update-ca-certificates
 
+ENV USER=appuser
+ENV UID=10001 
+ 
+RUN adduser \    
+    --disabled-password \    
+    --gecos "" \    
+    --home "/nonexistent" \    
+    --shell "/sbin/nologin" \    
+    --no-create-home \    
+    --uid "${UID}" \    
+    "${USER}"
+
 WORKDIR /go/src/github.com/farrej10/ShouldIBeScared.com/
 
 ADD pageGen/ ./
@@ -22,6 +34,7 @@ COPY --from=builder /etc/group /etc/group
 COPY --from=builder /go/bin/pageGen /go/bin/pageGen
 COPY --from=builder /go/src/github.com/farrej10/ShouldIBeScared.com/templates/* /var/www/
 
+USER appuser:appuser
 
 EXPOSE 8085
 

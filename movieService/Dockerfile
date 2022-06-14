@@ -4,6 +4,19 @@ RUN apk add --no-cache git ca-certificates && update-ca-certificates
 
 WORKDIR /go/src/github.com/farrej10/ShouldIBeScared.com/
 
+ENV USER=appuser
+ENV UID=10001 
+ 
+RUN adduser \    
+    --disabled-password \    
+    --gecos "" \    
+    --home "/nonexistent" \    
+    --shell "/sbin/nologin" \    
+    --no-create-home \    
+    --uid "${UID}" \    
+    "${USER}"
+
+
 COPY movieService/movieService.go movieService.go
 COPY movie/* movie/
 COPY ../go.mod ./
@@ -19,6 +32,8 @@ COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
 COPY --from=builder /go/bin/movieService /go/bin/movieService
+
+USER appuser:appuser
 
 EXPOSE 50051
 
